@@ -1,0 +1,9 @@
+# Vibe Studio v2.0 — All dependencies (single venv, no conflicts)
+fastapi>=0.115.6
+uvicorn[standard]>=0.34.0
+python-multipart>=0.0.18
+aiofiles>=24.1.0
+jinja2>=3.1.4
+httpx>=0.27.0
+pillow>=10.4.0
+anthropic>=0.40.0

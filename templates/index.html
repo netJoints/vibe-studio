@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vibe Studio — AI Video Creator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f7f8;--white:#ffffff;--surface:#ffffff;--surface2:#f0f0f3;--surface3:#e8e8ec;
+  --border:#e0e0e6;--border2:#d0d0d8;--text:#1a1a2e;--text2:#6b7280;--text3:#9ca3af;
+  --accent:#c97d3a;--accent2:#b06b2a;--accent-bg:#fef7f0;--accent-border:#f5dcc0;
+  --green:#059669;--green-bg:#ecfdf5;--red:#dc2626;--red-bg:#fef2f2;
+  --blue:#2563eb;--blue-bg:#eff6ff;--blue-light:#dbeafe;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow2:0 4px 12px rgba(0,0,0,0.08);--radius:12px;
+  --font:'Inter',system-ui,-apple-system,sans-serif;
+}
+html{font-size:15px}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+button{font-family:var(--font);cursor:pointer;border:none;outline:none}
+input,select,textarea{font-family:var(--font);outline:none}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── Shell ────────────────────────────────────────────────────────────── */
+.shell{display:grid;grid-template-columns:1fr 380px;grid-template-rows:auto 1fr;min-height:100vh}
+@media(max-width:1000px){.shell{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}
+  .sidebar{border-left:none;border-top:1px solid var(--border);max-height:50vh}}
+
+.header{grid-column:1/-1;padding:0.85rem 1.5rem;display:flex;align-items:center;gap:0.75rem;
+  background:var(--white);border-bottom:1px solid var(--border);box-shadow:var(--shadow)}
+.header h1{font-size:1.25rem;font-weight:800;letter-spacing:-0.03em;color:var(--text)}
+.header h1 span{color:var(--accent)}
+.pills{margin-left:auto;display:flex;gap:0.4rem;align-items:center}
+.pill{padding:0.2rem 0.55rem;border-radius:16px;font-size:0.68rem;font-weight:600}
+.pill-g{background:var(--green-bg);color:var(--green)}.pill-r{background:var(--red-bg);color:var(--red)}
+
+.main{padding:1.25rem 1.75rem;overflow-y:auto;max-height:calc(100vh - 52px);background:var(--bg)}
+.sidebar{border-left:1px solid var(--border);background:var(--white);display:flex;flex-direction:column;max-height:calc(100vh - 52px)}
+
+/* ── Cards ────────────────────────────────────────────────────────────── */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.card h3{font-size:0.95rem;font-weight:700;margin-bottom:0.5rem;color:var(--text);display:flex;align-items:center;gap:0.5rem}
+.card-sub{font-size:0.8rem;color:var(--text2);margin-bottom:0.85rem;line-height:1.45}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;
+  background:var(--accent);color:white;font-size:0.72rem;font-weight:700;flex-shrink:0}
+
+/* ── Form ─────────────────────────────────────────────────────────────── */
+.fg{margin-bottom:0.85rem}
+.fg label{display:block;font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:0.3rem}
+select,.ti{width:100%;padding:0.6rem 0.8rem;background:var(--white);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-size:0.85rem;transition:border 0.2s}
+select:focus,.ti:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+textarea.ti{resize:vertical;min-height:55px}
+.row{display:flex;gap:0.75rem}.row>*{flex:1}
+
+.btn{padding:0.6rem 1.15rem;border-radius:8px;font-weight:600;font-size:0.82rem;transition:all 0.15s;
+  display:inline-flex;align-items:center;gap:0.4rem}
+.btn-p{background:var(--accent);color:white}
+.btn-p:hover{background:var(--accent2);box-shadow:var(--shadow2)}
+.btn-p:disabled{opacity:0.4;cursor:not-allowed}
+.btn-s{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-s:hover{background:var(--surface3);border-color:var(--border2)}
+.btn-d{background:var(--red-bg);color:var(--red);border:1px solid #fecaca}
+.btn-sm{padding:0.32rem 0.65rem;font-size:0.72rem}
+.btn-block{width:100%;justify-content:center}
+.btn-row{display:flex;gap:0.5rem;flex-wrap:wrap}
+
+/* ── Upload Zone (roomy!) ─────────────────────────────────────────────── */
+.upload-tabs{display:flex;gap:0;margin-bottom:0.85rem;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.upload-tab{flex:1;padding:0.5rem;text-align:center;font-size:0.8rem;font-weight:500;
+  background:var(--surface2);color:var(--text2);cursor:pointer;transition:all 0.15s}
+.upload-tab:hover{color:var(--text);background:var(--surface3)}
+.upload-tab.active{background:var(--white);color:var(--accent);font-weight:600;box-shadow:inset 0 -2px 0 var(--accent)}
+
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--radius);padding:2.5rem 2rem;
+  text-align:center;cursor:pointer;transition:all 0.3s;position:relative;background:var(--surface2)08;min-height:160px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:var(--accent-bg)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-zone .ico{font-size:2.5rem;margin-bottom:0.5rem}
+.upload-zone p{font-size:0.9rem;color:var(--text);font-weight:500}
+.upload-zone small{font-size:0.75rem;color:var(--text2);margin-top:0.25rem}
+
+/* ── Media Preview Grid (roomy with previews) ─────────────────────────── */
+.media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.75rem;margin-top:0.75rem}
+.mg-card{position:relative;border-radius:10px;overflow:hidden;border:2px solid var(--border);
+  background:var(--white);cursor:grab;transition:all 0.15s;box-shadow:var(--shadow);user-select:none}
+.mg-card:active{cursor:grabbing}
+.mg-card:hover{border-color:var(--accent);box-shadow:var(--shadow2)}
+.mg-card.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+.mg-card.drag-over{border-color:var(--blue);background:var(--blue-bg);transform:scale(1.03)}
+.mg-card.dragging{opacity:0.35;transform:scale(0.95)}
+.mg-card .preview{width:100%;height:140px;object-fit:cover;display:block;background:var(--surface2)}
+.mg-card video.preview{background:#000}
+.mg-card .audio-prev{width:100%;height:140px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--surface2),var(--surface3));font-size:3rem}
+.mg-info{padding:0.5rem 0.6rem;display:flex;justify-content:space-between;align-items:center}
+.mg-name{font-size:0.72rem;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px}
+.mg-badge{font-size:0.65rem;padding:0.15rem 0.4rem;border-radius:4px;font-weight:600}
+.mg-dur{font-size:0.62rem;padding:0.15rem 0.35rem;border-radius:4px;background:var(--accent-bg);color:var(--accent);font-weight:600}
+.b-img{background:var(--blue-bg);color:var(--blue)}.b-vid{background:var(--green-bg);color:var(--green)}.b-aud{background:var(--accent-bg);color:var(--accent)}
+.mg-ord{position:absolute;top:6px;left:6px;width:24px;height:24px;border-radius:50%;
+  background:var(--accent);color:white;font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow2)}
+.mg-rm{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;
+  background:white;color:var(--red);font-size:0.75rem;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;opacity:0;transition:opacity 0.2s;box-shadow:var(--shadow2);border:1px solid #fecaca}
+.mg-card:hover .mg-rm{opacity:1}
+.mg-drag-hint{font-size:0.68rem;color:var(--text3);text-align:center;margin-top:0.4rem}
+.media-empty{padding:2rem;text-align:center;color:var(--text3);font-size:0.85rem;background:var(--surface2);border-radius:8px;margin-top:0.5rem}
+
+/* ── Audio Search & Browser ───────────────────────────────────────────── */
+.audio-search-row{display:flex;gap:0.5rem;margin-bottom:0.75rem}
+.audio-results{display:flex;flex-direction:column;gap:0.5rem;max-height:300px;overflow-y:auto}
+.audio-item{display:flex;align-items:center;gap:0.6rem;padding:0.6rem 0.75rem;border-radius:8px;
+  background:var(--surface2);border:1px solid var(--border);transition:all 0.15s;cursor:pointer}
+.audio-item:hover{background:var(--blue-bg);border-color:var(--blue)}
+.audio-item.playing{background:var(--green-bg);border-color:var(--green)}
+.audio-play{width:32px;height:32px;border-radius:50%;background:var(--accent);color:white;
+  display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0;cursor:pointer;transition:all 0.15s}
+.audio-play:hover{background:var(--accent2);transform:scale(1.05)}
+.audio-meta{flex:1;min-width:0}
+.audio-title{font-size:0.82rem;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.audio-detail{font-size:0.7rem;color:var(--text2)}
+.audio-use{padding:0.3rem 0.6rem;border-radius:6px;background:var(--accent);color:white;
+  font-size:0.72rem;font-weight:600;cursor:pointer;flex-shrink:0;transition:all 0.15s}
+.audio-use:hover{background:var(--accent2)}
+
+/* ── Audio Tracks ─────────────────────────────────────────────────────── */
+.atrack{display:flex;align-items:center;gap:0.6rem;padding:0.6rem;border-radius:8px;
+  background:var(--surface2);border:1px solid var(--border);margin-bottom:0.4rem}
+.atrack-play{width:30px;height:30px;border-radius:50%;background:var(--accent);color:white;
+  display:flex;align-items:center;justify-content:center;font-size:0.75rem;flex-shrink:0;cursor:pointer}
+.atrack-info{flex:1;min-width:0}
+.atrack-name{font-size:0.78rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.atrack-role{font-size:0.68rem;color:var(--text2)}
+.atrack-vol{display:flex;align-items:center;gap:0.4rem;flex-shrink:0}
+.atrack-vol input[type=range]{width:80px;accent-color:var(--accent)}
+.atrack-vol span{font-size:0.7rem;font-weight:600;color:var(--accent);min-width:30px;text-align:right}
+.atrack-rm{width:22px;height:22px;border-radius:50%;background:var(--red-bg);color:var(--red);
+  display:flex;align-items:center;justify-content:center;font-size:0.7rem;cursor:pointer;flex-shrink:0;border:1px solid #fecaca}
+
+/* ── Volume Control ───────────────────────────────────────────────────── */
+.vol-row{display:flex;align-items:center;gap:0.75rem;padding:0.75rem;background:var(--surface2);border-radius:8px;margin-top:0.6rem}
+.vol-row label{font-size:0.75rem;font-weight:500;color:var(--text2);white-space:nowrap}
+.vol-row input[type=range]{flex:1;accent-color:var(--accent)}
+.vol-row span{font-size:0.75rem;font-weight:600;color:var(--accent);min-width:35px;text-align:right}
+
+/* ── Editor ───────────────────────────────────────────────────────────── */
+.editor{background:var(--white);border:1px solid var(--accent-border);border-radius:var(--radius);
+  padding:1rem;margin-top:0.75rem;box-shadow:0 0 0 3px var(--accent-bg)}
+.rg{margin-bottom:0.5rem}
+.rg label{font-size:0.72rem;color:var(--text2);display:flex;justify-content:space-between}
+.rg input[type=range]{width:100%;accent-color:var(--accent);margin-top:0.15rem}
+
+/* ── Preview ──────────────────────────────────────────────────────────── */
+.prev-wrap{background:var(--surface2);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)}
+.prev-vid{width:100%;max-height:380px;background:#000;display:block}
+
+/* ── Progress ─────────────────────────────────────────────────────────── */
+.pbar{width:100%;height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;margin:0.6rem 0}
+.pfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width 0.3s}
+
+/* ── Chat ─────────────────────────────────────────────────────────────── */
+.chat-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chat-msgs{flex:1;overflow-y:auto;padding:0.75rem;display:flex;flex-direction:column;gap:0.5rem;background:var(--bg)}
+.chat-msg{max-width:92%;padding:0.6rem 0.8rem;border-radius:12px;font-size:0.82rem;line-height:1.45;box-shadow:var(--shadow)}
+.chat-msg.user{align-self:flex-end;background:var(--accent);color:white;border-bottom-right-radius:4px}
+.chat-msg.bot{align-self:flex-start;background:var(--white);color:var(--text);border-bottom-left-radius:4px;border:1px solid var(--border)}
+.chat-msg pre{background:var(--surface2);padding:0.4rem;border-radius:6px;font-size:0.7rem;overflow-x:auto;margin:0.4rem 0;white-space:pre-wrap}
+.chat-msg strong{color:var(--accent)}
+.chat-in-row{display:flex;gap:0.4rem;padding:0.6rem;border-top:1px solid var(--border);background:var(--white)}
+.chat-in{flex:1;padding:0.5rem 0.7rem;background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-size:0.82rem}
+.chat-in:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+
+/* ── Tabs ─────────────────────────────────────────────────────────────── */
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--white)}
+.tab{flex:1;padding:0.6rem;text-align:center;font-size:0.8rem;font-weight:500;
+  color:var(--text2);background:transparent;transition:all 0.15s;border-bottom:2px solid transparent}
+.tab:hover{color:var(--text)}.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.tab-p{display:none;flex:1;overflow-y:auto}.tab-p.active{display:flex;flex-direction:column}
+
+/* ── Misc ─────────────────────────────────────────────────────────────── */
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;animation:sp 0.6s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.toasts{position:fixed;bottom:1.2rem;right:1.2rem;z-index:9999;display:flex;flex-direction:column;gap:0.4rem}
+.toast{padding:0.6rem 0.9rem;border-radius:8px;font-size:0.82rem;color:white;animation:tIn 0.3s;max-width:320px;box-shadow:var(--shadow2)}
+.t-ok{background:var(--green)}.t-err{background:var(--red)}.t-info{background:var(--blue)}
+@keyframes tIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.stock-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-top:0.6rem}
+.stock-img{border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all 0.15s;position:relative;box-shadow:var(--shadow)}
+.stock-img:hover{border-color:var(--accent);box-shadow:var(--shadow2)}
+.stock-img img{width:100%;height:80px;object-fit:cover;display:block}
+.stock-img .add-b{position:absolute;bottom:4px;right:4px;background:var(--accent);color:white;
+  width:22px;height:22px;border-radius:50%;font-size:0.8rem;display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity 0.2s;box-shadow:var(--shadow2)}
+.stock-img:hover .add-b{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <header class="header">
+    <h1>🎬 Vibe <span>Studio</span></h1>
+    <div class="pills">
+      {% if has_ffmpeg %}<span class="pill pill-g">FFmpeg ✓</span>{% else %}<span class="pill pill-r">FFmpeg ✗</span>{% endif %}
+      <span class="pill pill-g" id="stPill">Ready</span>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- ① UPLOAD MEDIA ──────────────────────────────────────────────── -->
+    <div class="card">
+      <h3><span class="step-num">1</span> Add Your Media</h3>
+      <p class="card-sub">Upload your own photos & videos, or search for free stock images. All media gets previewed below.</p>
+
+      <div class="upload-tabs">
+        <div class="upload-tab active" onclick="showUpTab('own',this)">📁 Your Photos & Videos</div>
+        <div class="upload-tab" onclick="showUpTab('stock',this)">🔍 Free Stock Photos</div>
+      </div>
+
+      <div id="upOwn">
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" multiple accept="image/*,video/*" onchange="handleUpload(event)">
+          <div class="ico">📷</div>
+          <p>Drag & drop photos and videos here</p>
+          <small>Supports JPG, PNG, WEBP, MP4, MOV, AVI • Click to browse</small>
+        </div>
+      </div>
+
+      <div id="upStock" style="display:none">
+        <div style="display:flex;gap:0.5rem">
+          <input type="text" class="ti" id="stockQuery" placeholder="Search free photos (mosque, mountain, gym, food)..."
+                 onkeydown="if(event.key==='Enter')searchStock()">
+          <button class="btn btn-p btn-sm" onclick="searchStock()">Search</button>
+        </div>
+        <div class="stock-grid" id="stockGrid"></div>
+        <p style="font-size:0.7rem;color:var(--text3);margin-top:0.4rem">
+          Powered by <a href="https://www.pexels.com" target="_blank">Pexels</a> — 100% free, royalty-free.
+          <span id="stockStatus"></span>
+        </p>
+      </div>
+
+      <!-- Media preview grid -->
+      <div id="mediaSection">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.75rem">
+          <span id="mediaSummary" style="font-size:0.8rem;font-weight:500;color:var(--text2)"></span>
+          <span id="totalDuration" style="font-size:0.82rem;font-weight:700;color:var(--accent);background:var(--accent-bg);padding:0.25rem 0.6rem;border-radius:6px;display:none"></span>
+        </div>
+        <div class="media-empty" id="mediaEmpty">Your uploaded photos and videos will appear here with previews</div>
+        <div class="media-grid" id="mediaGrid"></div>
+      </div>
+    </div>
+
+    <!-- EDITOR ──────────────────────────────────────────────────────── -->
+    <div class="editor" id="editorPanel" style="display:none">
+      <h3 style="font-size:0.9rem;margin-bottom:0.6rem">✂️ Editing: <span id="editName"></span></h3>
+      <div id="edVidCtrl" style="display:none">
+        <video id="edPreview" style="width:100%;max-height:220px;border-radius:8px;background:#000" controls></video>
+        <div class="rg"><label>Trim Start <span id="tsVal">0s</span></label>
+          <input type="range" id="tsRange" min="0" max="60" step="0.1" value="0" oninput="updTrim()"></div>
+        <div class="rg"><label>Trim End <span id="teVal">-</span></label>
+          <input type="range" id="teRange" min="0" max="60" step="0.1" value="60" oninput="updTrim()"></div>
+        <button class="btn btn-s btn-sm" onclick="applyTrim()">✂️ Apply Trim</button>
+      </div>
+      <div id="edImgCtrl" style="display:none">
+        <img id="edImgPreview" style="width:100%;max-height:220px;border-radius:8px;object-fit:contain;background:var(--surface2)">
+      </div>
+      <div class="fg" style="margin-top:0.6rem">
+        <label>⏱ Clip Duration in Final Video</label>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <input type="range" id="edDur" min="1" max="120" step="0.5" value="5" style="flex:1;accent-color:var(--accent)"
+                 oninput="document.getElementById('edDurVal').textContent=this.value+'s';updClipDur()">
+          <span id="edDurVal" style="font-size:0.82rem;font-weight:600;color:var(--accent);min-width:35px">5s</span>
+        </div>
+        <small style="color:var(--text3);font-size:0.68rem">How long this clip plays in the final video. For videos, this is capped at the clip length.</small>
+      </div>
+      <div class="fg">
+        <label>Caption for this slide</label>
+        <input type="text" class="ti" id="edCap" placeholder="Enter caption..." oninput="updCap()">
+      </div>
+      <div class="btn-row" style="flex-wrap:nowrap">
+        <button class="btn btn-s btn-sm" onclick="moveMedia(-1)" title="Move earlier">⬆ Move Up</button>
+        <button class="btn btn-s btn-sm" onclick="moveMedia(1)" title="Move later">⬇ Move Down</button>
+        <button class="btn btn-d btn-sm" onclick="delSelMedia()">🗑 Remove</button>
+        <button class="btn btn-p btn-sm" onclick="closeEd()">✓ Done</button>
+      </div>
+    </div>
+
+    <!-- ② AUDIO & MUSIC ────────────────────────────────────────────── -->
+    <div class="card">
+      <h3><span class="step-num">2</span> Audio & Music</h3>
+      <p class="card-sub">Search royalty-free music or upload your own audio files. Add multiple tracks and control volume.</p>
+
+      <div class="fg"><label>🔍 Search Royalty-Free Music</label></div>
+      <div class="audio-search-row">
+        <input type="text" class="ti" id="audioQuery" placeholder="e.g. nasheed, cinematic, upbeat, nature..."
+               onkeydown="if(event.key==='Enter')searchAudio()" style="flex:1">
+        <button class="btn btn-p btn-sm" onclick="searchAudio()">Search</button>
+      </div>
+      <div class="audio-results" id="audioResults"></div>
+
+      <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border)">
+        <label class="btn btn-s" style="cursor:pointer">
+          🎵 Upload Your Own Audio (MP3, WAV, M4A)
+          <input type="file" accept="audio/*" style="display:none" onchange="uploadAudio(event)" multiple>
+        </label>
+      </div>
+
+      <!-- Audio Tracks List -->
+      <div id="audioTracksSection" style="display:none;margin-top:0.75rem">
+        <div class="fg"><label>🎶 Audio Tracks</label></div>
+        <div id="audioTracksList"></div>
+      </div>
+
+      <!-- Video Original Audio Volume -->
+      <div class="vol-row" style="margin-top:0.6rem">
+        <label>🎤 Video Audio</label>
+        <input type="range" id="vidVol" min="0" max="100" value="100"
+               oninput="document.getElementById('vidVolVal').textContent=this.value+'%';updateVideoVol()">
+        <span id="vidVolVal">100%</span>
+      </div>
+      <p style="font-size:0.68rem;color:var(--text3);margin-top:0.2rem">
+        Controls the volume of audio from your original video clips. Set to 0 to mute them.
+      </p>
+    </div>
+
+    <!-- ③ GENERATE ─────────────────────────────────────────────────── -->
+    <div class="card">
+      <h3><span class="step-num">3</span> Generate Video</h3>
+      <div class="row">
+        <div class="fg"><label>Duration (sec)</label>
+          <input type="number" class="ti" id="duration" value="30" min="5" max="600" onchange="renderMedia()"></div>
+        <div class="fg"><label>Orientation</label>
+          <select id="orient"><option value="portrait">📱 Portrait (9:16)</option>
+            <option value="landscape">🖥 Landscape (16:9)</option>
+            <option value="square">⬜ Square (1:1)</option></select></div>
+      </div>
+      <div id="genStatus"></div>
+      <button class="btn btn-p btn-block" id="genBtn" onclick="generate()" disabled style="padding:0.75rem">
+        🎬 Generate MP4 Video
+      </button>
+    </div>
+
+    <!-- PREVIEW ────────────────────────────────────────────────────── -->
+    <div class="card" id="prevCard" style="display:none">
+      <h3>🎥 Your Video is Ready!</h3>
+      <div class="prev-wrap">
+        <video id="prevVid" class="prev-vid" controls></video>
+      </div>
+      <div class="btn-row" style="margin-top:0.75rem">
+        <a id="dlLink" class="btn btn-p" download>⬇ Download MP4</a>
+        <button class="btn btn-s" onclick="generate()">🔄 Regenerate</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ═══ SIDEBAR ═══════════════════════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="tabs">
+      <button class="tab active" onclick="swTab('chat',this)">🤖 AI Assistant</button>
+      <button class="tab" onclick="swTab('settings',this)">⚙️ Settings</button>
+    </div>
+    <div class="tab-p active" id="p-chat">
+      <div class="chat-wrap">
+        <div class="chat-msgs" id="chatMsgs">
+          <div class="chat-msg bot">
+            👋 <strong>Vibe Studio AI</strong> here!<br><br>
+            Tell me what video you want and I'll configure everything for you.<br><br>
+            Try:<br>• <em>"Religious video with nasheeds"</em><br>• <em>"Gym motivation reel"</em><br>• <em>"Travel montage"</em>
+          </div>
+        </div>
+        <div class="chat-in-row">
+          <input type="text" class="chat-in" id="chatIn" placeholder="Describe your video..."
+                 onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn btn-p btn-sm" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+    <div class="tab-p" id="p-settings">
+      <div style="padding:0.75rem">
+        <div class="card">
+          <h3>⚙️ API Keys</h3>
+          <div class="fg"><label>Anthropic API Key</label>
+            <input type="password" class="ti" id="apiKey" placeholder="sk-ant-... (optional)">
+            <small style="color:var(--text3);font-size:0.68rem">For smarter AI chat. Works without it too.</small></div>
+          <div class="fg"><label>Pexels API Key</label>
+            <input type="text" class="ti" id="pexelsKey" placeholder="Free from pexels.com/api">
+            <small style="color:var(--text3);font-size:0.68rem">For better stock photo search. Demo mode works without it.</small></div>
+          <div class="fg"><label>Pixabay API Key</label>
+            <input type="text" class="ti" id="pixabayKey" placeholder="Free from pixabay.com/api/docs">
+            <small style="color:var(--text3);font-size:0.68rem">For royalty-free music search with audio previews. <a href="https://pixabay.com/api/docs/" target="_blank">Get free key →</a></small></div>
+        </div>
+        <div class="card">
+          <h3>📡 MCP Server</h3>
+          <p style="font-size:0.78rem;color:var(--text2);line-height:1.5">
+            Run <code style="background:var(--surface2);padding:0.1rem 0.3rem;border-radius:4px">python mcp/server.py</code> to connect Claude Desktop.
+          </p>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<!-- Hidden audio player for previewing -->
+<audio id="audioPlayer" style="display:none"></audio>
+
+<script>
+const S={pid:null,cat:'motivational',audioVibe:'energetic',media:[],selId:null,generating:false,playingAudioId:null,audioTracks:[],playingTrackId:null};
+const audioPlayer=document.getElementById('audioPlayer');
+
+function toast(m,t='info'){const c=document.getElementById('toasts'),d=document.createElement('div');
+  d.className=`toast t-${t}`;d.textContent=m;c.appendChild(d);setTimeout(()=>d.remove(),4000)}
+async function api(u,o={}){const r=await fetch(u,o);if(!r.ok){const e=await r.json().catch(()=>({detail:r.statusText}));throw new Error(e.detail||r.statusText)}return r.json()}
+async function ensureProject(){if(S.pid)return;const fd=new FormData();
+  fd.append('category',S.cat);fd.append('audio_vibe',S.audioVibe);fd.append('duration',document.getElementById('duration').value);
+  const d=await api('/api/project/create',{method:'POST',body:fd});S.pid=d.project_id;document.getElementById('stPill').textContent=`Project: ${S.pid}`}
+
+function swTab(n,btn){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-p').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById(`p-${n}`).classList.add('active')}
+function showUpTab(n,btn){document.querySelectorAll('.upload-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
+  document.getElementById('upOwn').style.display=n==='own'?'block':'none';document.getElementById('upStock').style.display=n==='stock'?'block':'none'}
+
+function selCat(c){S.cat=c;document.querySelectorAll('.vibe-btn').forEach(b=>b.classList.remove('sel'));
+  document.querySelector(`[data-cat="${c}"]`).classList.add('sel');
+  if(S.pid)api(`/api/project/${S.pid}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({category:c})})}
+function selAudio(a){S.audioVibe=a;document.querySelectorAll('.audio-btn').forEach(b=>b.classList.remove('sel'));
+  document.querySelector(`[data-av="${a}"]`).classList.add('sel');
+  if(S.pid)api(`/api/project/${S.pid}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({audio_vibe:a})})}
+
+async function uploadAudio(e){const files=e.target.files;if(!files.length)return;await ensureProject();
+  const fd=new FormData();for(const f of files)fd.append('files',f);
+  toast('Uploading audio...','info');
+  await api(`/api/project/${S.pid}/upload`,{method:'POST',body:fd});
+  toast('Audio uploaded!','ok');refreshAudioTracks()}
+
+async function useAudio(url,name){await ensureProject();toast('Downloading audio...','info');
+  try{const r=await fetch(`/api/audio/download?url=${encodeURIComponent(url)}`);
+    if(!r.ok){const r2=await fetch(url);if(!r2.ok)throw new Error('Download failed');var b=await r2.blob()}else{var b=await r.blob()}
+    const fd=new FormData();fd.append('files',b,`${name.substring(0,20)}.mp3`);
+    await api(`/api/project/${S.pid}/upload`,{method:'POST',body:fd});
+    toast('Audio added!','ok');refreshAudioTracks()}catch(e){toast('Failed: '+e.message,'err')}}
+
+async function refreshAudioTracks(){
+  if(!S.pid)return;
+  try{const d=await api(`/api/project/${S.pid}/audio`);
+    S.audioTracks=d.audio_tracks||[];renderAudioTracks()}catch{}}
+
+function renderAudioTracks(){
+  const sec=document.getElementById('audioTracksSection');
+  const list=document.getElementById('audioTracksList');
+  if(!S.audioTracks||!S.audioTracks.length){sec.style.display='none';return}
+  sec.style.display='block';
+  list.innerHTML=S.audioTracks.map((t,i)=>`
+    <div class="atrack" id="at-${t.id}" data-url="${encodeURI(t.url)}" data-tid="${t.id}">
+      <div class="atrack-play" onclick="previewTrack(this.parentElement)">▶</div>
+      <div class="atrack-info">
+        <div class="atrack-name">${t.filename||t.role}</div>
+        <div class="atrack-role">${t.role||'Audio '+(i+1)}</div>
+      </div>
+      <div class="atrack-vol">
+        <span style="font-size:0.68rem;color:var(--text3)">Vol</span>
+        <input type="range" min="0" max="100" value="${t.volume||50}"
+               oninput="this.nextElementSibling.textContent=this.value+'%';updateTrackVol('${t.id}',this.value)">
+        <span>${t.volume||50}%</span>
+      </div>
+      <div class="atrack-rm" onclick="removeTrack('${t.id}')">✕</div>
+    </div>`).join('')}
+
+function previewTrack(el){
+  const url=decodeURI(el.dataset.url);
+  const id=el.dataset.tid;
+  document.querySelectorAll('.atrack').forEach(el=>el.style.background='var(--surface2)');
+  if(S.playingTrackId===id){audioPlayer.pause();audioPlayer.currentTime=0;S.playingTrackId=null;return}
+  audioPlayer.pause();
+  audioPlayer.src=url;
+  audioPlayer.load();
+  audioPlayer.play().then(()=>{
+    S.playingTrackId=id;
+    const atel=document.getElementById(`at-${id}`);if(atel)atel.style.background='var(--green-bg)';
+  }).catch(err=>{console.error('Audio play failed:',err);toast('Audio preview failed','err')});
+  audioPlayer.onended=()=>{S.playingTrackId=null;document.querySelectorAll('.atrack').forEach(el=>el.style.background='var(--surface2)')}}
+
+async function updateTrackVol(id,vol){
+  if(!S.pid)return;
+  api(`/api/project/${S.pid}/audio/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({volume:+vol})})}
+
+async function removeTrack(id){
+  if(!S.pid)return;
+  await api(`/api/project/${S.pid}/audio/${id}`,{method:'DELETE'});
+  toast('Audio removed','info');refreshAudioTracks()}
+
+async function updateVideoVol(){
+  if(!S.pid)return;
+  api(`/api/project/${S.pid}/video-volume`,{method:'PUT',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({volume:+document.getElementById('vidVol').value})})}
+
+// ── Upload ──
+const uz=document.getElementById('uploadZone');
+uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('drag')});
+uz.addEventListener('dragleave',()=>uz.classList.remove('drag'));
+uz.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('drag');if(e.dataTransfer.files.length)uploadFiles(e.dataTransfer.files)});
+function handleUpload(e){if(e.target.files.length)uploadFiles(e.target.files)}
+async function uploadFiles(files){await ensureProject();const fd=new FormData();
+  for(const f of files)fd.append('files',f);toast('Uploading...','info');
+  try{const d=await api(`/api/project/${S.pid}/upload`,{method:'POST',body:fd});toast(`Uploaded ${d.uploaded.length} file(s)`,'ok');
+    const proj=await api(`/api/project/${S.pid}`);S.media=proj.media;renderMedia();document.getElementById('genBtn').disabled=S.media.length===0;
+  }catch(e){toast(e.message,'err')}}
+
+// ── Media Grid with Drag-to-Reorder ──
+let dragSrcIdx = null;
+
+function renderMedia(){const grid=document.getElementById('mediaGrid'),empty=document.getElementById('mediaEmpty');
+  const summaryEl=document.getElementById('mediaSummary'),durEl=document.getElementById('totalDuration');
+  if(!S.media.length){grid.innerHTML='';empty.style.display='block';summaryEl.textContent='';durEl.style.display='none';return}
+  empty.style.display='none';
+
+  // Calculate total duration
+  const targetDur=+document.getElementById('duration').value;
+  let customTotal=0,autoCount=0;
+  S.media.forEach(m=>{if(m.custom_duration)customTotal+=m.custom_duration;else autoCount++});
+  const autoDur=autoCount>0&&customTotal<targetDur?Math.round((targetDur-customTotal)/autoCount):Math.round(targetDur/S.media.length);
+  let totalSec=0;
+  S.media.forEach(m=>{totalSec+=(m.custom_duration||autoDur)});
+
+  summaryEl.textContent=`${S.media.length} item${S.media.length>1?'s':''}`;
+  durEl.style.display='inline';
+  durEl.textContent=`⏱ Total: ${totalSec}s`;
+
+  grid.innerHTML=S.media.map((m,i)=>{
+    const dur=m.custom_duration||autoDur;
+    return `
+    <div class="mg-card ${S.selId===m.id?'sel':''}" data-id="${m.id}" data-idx="${i}"
+         draggable="true"
+         ondragstart="mgDragStart(event,${i})"
+         ondragover="mgDragOver(event)"
+         ondragenter="mgDragEnter(event)"
+         ondragleave="mgDragLeave(event)"
+         ondrop="mgDrop(event,${i})"
+         ondragend="mgDragEnd(event)"
+         onclick="selMedia('${m.id}')">
+      <span class="mg-ord">${i+1}</span>
+      <span class="mg-rm" onclick="event.stopPropagation();rmMedia('${m.id}')">✕</span>
+      ${m.type==='video'?`<video class="preview" src="${m.url}" muted onmouseover="this.play()" onmouseout="this.pause();this.currentTime=0"></video>`
+        :m.type==='audio'?`<div class="audio-prev">🎵</div>`
+        :`<img class="preview" src="${m.url}" alt="">`}
+      <div class="mg-info">
+        <span class="mg-name">${m.filename}</span>
+        <span class="mg-dur">${dur}s${m.custom_duration?'':'*'}</span>
+        <span class="mg-badge b-${m.type==='video'?'vid':m.type==='audio'?'aud':'img'}">${m.type}</span>
+      </div>
+    </div>`}).join('');
+  if(S.media.length > 1) {
+    grid.insertAdjacentHTML('afterend',
+      document.querySelector('.mg-drag-hint') ? '' :
+      '<p class="mg-drag-hint">💡 Drag cards to reorder • Click to edit duration & trim</p>');
+  }
+}
+
+function mgDragStart(e, idx) {
+  dragSrcIdx = idx;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', idx);
+}
+function mgDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+function mgDragEnter(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function mgDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function mgDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.mg-card').forEach(c => c.classList.remove('drag-over','dragging'));
+}
+function mgDrop(e, targetIdx) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (dragSrcIdx === null || dragSrcIdx === targetIdx) return;
+  const item = S.media.splice(dragSrcIdx, 1)[0];
+  S.media.splice(targetIdx, 0, item);
+  // Update order on server
+  S.media.forEach((m, i) => m.order = i);
+  if (S.pid) {
+    api(`/api/project/${S.pid}/reorder`, {
+      method: 'PUT', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({order: S.media.map(m => m.id)})
+    });
+  }
+  dragSrcIdx = null;
+  renderMedia();
+  toast('Reordered', 'info');
+}
+
+async function rmMedia(id){await api(`/api/project/${S.pid}/media/${id}`,{method:'DELETE'});
+  S.media=S.media.filter(m=>m.id!==id);renderMedia();if(S.selId===id)closeEd();
+  document.getElementById('genBtn').disabled=S.media.length===0;toast('Removed','info')}
+
+// ── Move Up/Down ──
+async function moveMedia(dir) {
+  if (!S.selId) return;
+  const idx = S.media.findIndex(m => m.id === S.selId);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= S.media.length) return;
+  const item = S.media.splice(idx, 1)[0];
+  S.media.splice(newIdx, 0, item);
+  S.media.forEach((m, i) => m.order = i);
+  if (S.pid) {
+    api(`/api/project/${S.pid}/reorder`, {
+      method: 'PUT', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({order: S.media.map(m => m.id)})
+    });
+  }
+  renderMedia();
+  toast(`Moved ${dir < 0 ? 'up' : 'down'}`, 'info');
+}
+
+// ── Editor ──
+function selMedia(id){const m=S.media.find(x=>x.id===id);if(!m)return;S.selId=id;renderMedia();
+  const p=document.getElementById('editorPanel');p.style.display='block';
+  document.getElementById('editName').textContent=m.filename;document.getElementById('edCap').value=m.caption||'';
+  // Set clip duration slider
+  const defDur = m.custom_duration || Math.round(+document.getElementById('duration').value / S.media.length);
+  document.getElementById('edDur').value = defDur;
+  document.getElementById('edDurVal').textContent = defDur + 's';
+  if(m.type==='video'){document.getElementById('edVidCtrl').style.display='block';document.getElementById('edImgCtrl').style.display='none';
+    const v=document.getElementById('edPreview');v.src=m.url;
+    v.onloadedmetadata=()=>{
+      document.getElementById('tsRange').max=v.duration;
+      document.getElementById('teRange').max=v.duration;
+      document.getElementById('teRange').value=m.trim_end||v.duration;
+      document.getElementById('tsRange').value=m.trim_start||0;
+      // Update dur slider max to video length
+      document.getElementById('edDur').max = Math.ceil(v.duration);
+      updTrim();
+    };
+  }else if(m.type==='image'){document.getElementById('edVidCtrl').style.display='none';document.getElementById('edImgCtrl').style.display='block';
+    document.getElementById('edImgPreview').src=m.url;
+    document.getElementById('edDur').max = 120;
+  }else{document.getElementById('edVidCtrl').style.display='none';document.getElementById('edImgCtrl').style.display='none'}
+  p.scrollIntoView({behavior:'smooth',block:'nearest'})}
+
+function updClipDur() {
+  if (!S.selId) return;
+  const dur = +document.getElementById('edDur').value;
+  const m = S.media.find(x => x.id === S.selId);
+  if (m) m.custom_duration = dur;
+  // Save to server
+  api(`/api/project/${S.pid}/media/${S.selId}`, {
+    method: 'PUT', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({custom_duration: dur})
+  });
+  renderMedia();
+}
+
+function updTrim(){document.getElementById('tsVal').textContent=(+document.getElementById('tsRange').value).toFixed(1)+'s';
+  document.getElementById('teVal').textContent=(+document.getElementById('teRange').value).toFixed(1)+'s'}
+async function applyTrim(){if(!S.selId)return;toast('Trimming...','info');
+  const d=await api(`/api/project/${S.pid}/trim/${S.selId}`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({start:+document.getElementById('tsRange').value,end:+document.getElementById('teRange').value})});
+  toast('Trimmed!','ok');const m=S.media.find(x=>x.id===S.selId);if(m&&d.media){m.url=d.media.url}renderMedia();selMedia(S.selId)}
+function updCap(){if(!S.selId)return;const c=document.getElementById('edCap').value;const m=S.media.find(x=>x.id===S.selId);if(m)m.caption=c;
+  api(`/api/project/${S.pid}/media/${S.selId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({caption:c})})}
+function delSelMedia(){if(S.selId)rmMedia(S.selId)}
+function closeEd(){S.selId=null;document.getElementById('editorPanel').style.display='none';renderMedia()}
+
+// ── Stock Photo Search ──
+async function searchStock(){const q=document.getElementById('stockQuery').value.trim();if(!q)return;
+  const key=document.getElementById('pexelsKey').value.trim();const grid=document.getElementById('stockGrid'),st=document.getElementById('stockStatus');
+  if(!key){grid.innerHTML='';st.textContent='(Demo — add Pexels key in Settings for real results)';
+    for(let i=0;i<6;i++){const s=q.replace(/\s/g,'')+i;
+      grid.innerHTML+=`<div class="stock-img" onclick="addStockImg('https://picsum.photos/seed/${s}/400/300')"><img src="https://picsum.photos/seed/${s}/200/150" alt=""><span class="add-b">+</span></div>`}return}
+  st.textContent='Searching...';
+  try{const r=await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=9`,{headers:{'Authorization':key}});
+    const data=await r.json();grid.innerHTML='';
+    if(data.photos?.length){data.photos.forEach(p=>{grid.innerHTML+=`<div class="stock-img" onclick="addStockImg('${p.src.medium}')"><img src="${p.src.tiny}" alt=""><span class="add-b">+</span></div>`});st.textContent=`${data.photos.length} results`}
+    else st.textContent='No results'}catch{st.textContent='Failed — check API key'}}
+async function addStockImg(url){await ensureProject();toast('Adding stock image...','info');
+  try{const r=await fetch(url);const b=await r.blob();const fd=new FormData();fd.append('files',b,`stock_${Date.now()}.jpg`);
+    await api(`/api/project/${S.pid}/upload`,{method:'POST',body:fd});toast('Added!','ok');
+    const proj=await api(`/api/project/${S.pid}`);S.media=proj.media;renderMedia();document.getElementById('genBtn').disabled=false}catch{toast('Failed','err')}}
+
+// ── Audio Search (via backend API) ──
+async function searchAudio(){const q=document.getElementById('audioQuery').value.trim();if(!q)return;
+  const cont=document.getElementById('audioResults');cont.innerHTML='<p style="font-size:0.8rem;color:var(--text2)">Searching royalty-free music...</p>';
+  try{const pixKey=document.getElementById('pixabayKey').value.trim();
+    let url=`/api/audio/search?q=${encodeURIComponent(q)}`;
+    if(pixKey)url+=`&api_key=${encodeURIComponent(pixKey)}`;
+    const r=await fetch(url);
+    const data=await r.json();
+    if(!data.results?.length){cont.innerHTML='<p style="font-size:0.8rem;color:var(--text2)">No results. Try: "peaceful", "upbeat", "cinematic", "nasheed".</p>';return}
+    const note=data.note?`<p style="font-size:0.7rem;color:var(--text3);margin-bottom:0.5rem;padding:0.4rem 0.6rem;background:var(--blue-bg);border-radius:6px">💡 ${data.note}</p>`:'';
+    cont.innerHTML=note+data.results.map((h,i)=>`
+      <div class="audio-item" id="ai-${i}">
+        ${h.preview_url?`<div class="audio-play" onclick="event.stopPropagation();previewAudio('${h.preview_url}',${i})">▶</div>`
+          :`<div class="audio-play" style="background:var(--text3);cursor:default">♪</div>`}
+        <div class="audio-meta">
+          <div class="audio-title">${h.title||'Untitled'}</div>
+          <div class="audio-detail">${h.user||'Unknown'} • ${h.duration?Math.round(h.duration)+'s':'--'}${data.source==='curated'?' • Upload your own or add Pixabay key':''}</div>
+        </div>
+        ${h.preview_url?`<div class="audio-use" onclick="event.stopPropagation();useAudio('${h.preview_url}','${(h.title||'audio').replace(/'/g,'')}')">Use This</div>`
+          :`<div style="font-size:0.7rem;color:var(--text3)">Suggestion</div>`}
+      </div>`).join('')}
+  catch(e){cont.innerHTML=`<p style="font-size:0.8rem;color:var(--red)">Search failed: ${e.message}</p>`}}
+
+function previewAudio(url,idx){
+  document.querySelectorAll('.audio-item').forEach(el=>el.classList.remove('playing'));
+  if(S.playingAudioId===idx){audioPlayer.pause();S.playingAudioId=null;return}
+  audioPlayer.src=url;audioPlayer.play();S.playingAudioId=idx;
+  const el=document.getElementById(`ai-${idx}`);if(el)el.classList.add('playing');
+  audioPlayer.onended=()=>{S.playingAudioId=null;document.querySelectorAll('.audio-item').forEach(el=>el.classList.remove('playing'))}}
+
+// ── Generate ──
+async function generate(){if(S.generating)return;S.generating=true;
+  const btn=document.getElementById('genBtn'),st=document.getElementById('genStatus');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span> Generating...';
+  st.innerHTML='<div class="pbar"><div class="pfill" id="gp" style="width:10%"></div></div><p style="font-size:0.78rem;color:var(--text2)">FFmpeg is building your video...</p>';
+  let pct=10;const iv=setInterval(()=>{pct=Math.min(92,pct+Math.random()*7);const b=document.getElementById('gp');if(b)b.style.width=pct+'%'},800);
+  try{const o=document.getElementById('orient').value;let w=1080,h=1920;if(o==='landscape'){w=1920;h=1080}else if(o==='square'){w=1080;h=1080}
+    const ctrl=new AbortController();const tId=setTimeout(()=>ctrl.abort(),600000); // 10 min timeout
+    const d=await api(`/api/project/${S.pid}/generate`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({duration:+document.getElementById('duration').value,width:w,height:h}),signal:ctrl.signal});
+    clearTimeout(tId);
+    clearInterval(iv);const b=document.getElementById('gp');if(b)b.style.width='100%';
+    document.getElementById('prevCard').style.display='block';document.getElementById('prevVid').src=d.video_url;
+    document.getElementById('dlLink').href=d.download_url;toast('Video generated!','ok');
+    st.innerHTML='<p style="color:var(--green);font-size:0.82rem">✅ Video ready below!</p>';
+    document.getElementById('prevCard').scrollIntoView({behavior:'smooth'})}
+  catch(e){clearInterval(iv);st.innerHTML=`<p style="color:var(--red);font-size:0.82rem">❌ ${e.message}</p>`}
+  finally{S.generating=false;btn.disabled=S.media.length===0;btn.innerHTML='🎬 Generate MP4 Video'}}
+
+// ── Chat ──
+async function sendChat(){const inp=document.getElementById('chatIn'),msg=inp.value.trim();if(!msg)return;inp.value='';addMsg(msg,'user');
+  try{const d=await api('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,project_id:S.pid})});
+    addMsg(d.reply,'bot');parseAction(d.reply)}catch{addMsg('Sorry, something went wrong.','bot')}}
+function addMsg(t,r){const c=document.getElementById('chatMsgs'),d=document.createElement('div');d.className=`chat-msg ${r}`;
+  d.innerHTML=t.replace(/```json\n?([\s\S]*?)```/g,'<pre>$1</pre>').replace(/```([\s\S]*?)```/g,'<pre>$1</pre>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  c.appendChild(d);c.scrollTop=c.scrollHeight}
+function parseAction(t){const m=t.match(/```json\s*([\s\S]*?)```/)||t.match(/\{[\s\S]*?"action"[\s\S]*?\}/);if(!m)return;
+  try{const a=JSON.parse(m[1]||m[0]);if(a.action==='configure'){if(a.category)selCat(a.category);if(a.audio_vibe)selAudio(a.audio_vibe);
+    if(S.pid)api(`/api/project/${S.pid}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({category:a.category,audio_vibe:a.audio_vibe})});
+    toast('Settings applied from AI!','ok')}}catch{}}
+
+// ── Init ──
+document.querySelectorAll('.vibe-btn').forEach(b=>{if(b.dataset.cat==='motivational')b.classList.add('sel')});
+</script>
+</body>
+</html>
